@@ -1,5 +1,4 @@
 using BinDeps
-using Conda
 
 function validate_netcdf_version(name,handle)
     f = Libdl.dlsym_e(handle, "nc_inq_libvers")
@@ -27,13 +26,18 @@ end
 @BinDeps.setup
 libnetcdf = library_dependency("libnetcdf", aliases = ["libnetcdf4","libnetcdf-7","netcdf"], validate = validate_netcdf_version)
 
-provides(Conda.Manager, "libnetcdf", libnetcdf)
-provides(AptGet, "libnetcdf-dev", libnetcdf, os = :Linux)
-provides(Yum, "netcdf-devel", libnetcdf, os = :Linux)
-
-@osx_only begin
-    using Homebrew
-    provides( Homebrew.HB, "netcdf", libnetcdf, os = :Darwin )
+@static if is_linux()
+    provides(AptGet, "libnetcdf-dev", libnetcdf, os = :Linux)
+    provides(Yum, "netcdf-devel", libnetcdf, os = :Linux)
+else
+    @static if is_apple()
+        using Homebrew
+        provides(Homebrew.HB, "netcdf", libnetcdf, os = :Darwin)
+    else
+        using Conda
+        provides(Conda.Manager, "libnetcdf", libnetcdf)
+    end
 end
+
 
 @BinDeps.install Dict(:libnetcdf => :libnetcdf)
